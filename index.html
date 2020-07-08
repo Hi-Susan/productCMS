@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>第三週主線任務 - 產品管理頁面</title>
+  <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/uikit/3.5.4/css/uikit.min.css'/>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <div class="uk-section uk-section-default">
+      <div class="uk-container">
+        <a href="#modal-productInfo" class="uk-button uk-button-default uk-float-right" uk-toggle @click="openModal('create')">建立新的產品</a>
+        <table class="uk-table uk-table-divider uk-table-middle uk-table-justify">
+          <thead>
+            <tr>
+              <th class="uk-text-center">狀態</th>
+              <th class="uk-text-center">產品編號</th>
+              <th class="uk-text-center">產品圖片</th>
+              <th class="uk-text-center">產品名稱</th>
+              <th class="uk-text-center">單位</th>
+              <th class="uk-text-right">原價</th>
+              <th class="uk-text-right">售價</th>
+              <th class="uk-text-center">功能</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(item, index) in products" :key="item.id">
+              <td class="uk-text-center">
+                <div v-if="item.is_enabled" class="uk-text-success">上架</div>
+                <div v-else="item.is_enabled" class="uk-text-danger">下架</div>
+              </td>
+              <td class="uk-text-center">{{item.id}}</td>
+              <td class="uk-text-center">
+                <div class="image-box">
+                  <div class="image-content">
+                    <img :data-src="item.imageUrl" alt="" uk-img>
+                  </div>
+                </div>
+              </td>
+              <td class="uk-table-expand uk-text-center">{{item.title}}</td>
+              <td class="uk-text-center">{{item.unit}}</td>
+              <td class="uk-text-right">{{item.origin_price}}</td>
+              <td class="uk-text-right">{{item.price}}</td>
+              <td class="uk-text-center">
+                <a href="#modal-productComments" class="uk-icon-link uk-margin-small-right" uk-icon="comments" uk-tooltip="評價" uk-toggle @click="openModal('comment', item, index)"></a>
+                <a href="#modal-productInfo" class="uk-icon-link uk-margin-small-right" uk-icon="file-edit" uk-tooltip="編輯" uk-toggle @click="openModal('edit', item, index)"></a>
+                <a href="#modal-deleteProduct" class="uk-icon-link" uk-icon="trash" uk-tooltip="刪除" uk-toggle @click="openModal('delete', item, index)"></a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <!-- modal 評分-->
+    <div id="modal-productComments" uk-modal>
+      <div class="uk-modal-dialog uk-modal-body">
+        <button class="uk-modal-close-outside" type="button" uk-close></button>
+        <h2 class="uk-modal-title"><button class="uk-button uk-button-default uk-float-right" type="button" @click="openAddCommentModal">給予新的評價</button>商品評價</h2>
+        <div v-if="!interim.product.customer_reviews">
+          <p class="uk-text-center">目前無任何評價</p>
+        </div>
+        <article v-if="interim.status == 'comment'" v-for="(item, index) in interim.product.customer_reviews" :key="item.index"class="uk-comment uk-comment-primary uk-visible-toggle uk-margin-small-top" tabindex="-1">
+          <header class="uk-comment-header uk-position-relative">
+              <div class="uk-grid-medium uk-flex-middle" uk-grid>
+                  <div class="uk-width-expand">
+                      <h4 class="uk-comment-title uk-margin-remove"><a class="uk-link-reset" href="#">{{item.name}}</a></h4>
+                      <p class="uk-comment-meta uk-margin-remove-top"><a class="uk-link-reset" href="#">{{item.time}}</a></p>
+                  </div>
+              </div>
+              <div class="uk-position-top-right uk-position-small">
+                <span v-for="(item, index) in item.stars" :key="item.index" class="uk-margin-small-right" uk-icon="star"></span>
+              </div>
+          </header>
+          <div class="uk-comment-body">
+              <p>{{item.comment}}</p>
+          </div>
+        </article>
+      </div>
+    </div>
+    <!-- modal 商品資訊-->
+    <div id="modal-productInfo" class="uk-modal-container" uk-modal>
+      <div class="uk-modal-dialog">
+        <button class="uk-modal-close-default" type="button" uk-close></button>
+        <div class="uk-modal-header">
+          <h2 v-if="interim.status == 'create'" class="uk-modal-title">新增產品</h2>
+          <h2 v-else class="uk-modal-title">編輯產品</h2>
+        </div>
+        
+        <div class="uk-modal-body">
+          <div class="uk-grid-small" uk-grid>
+            <div class="uk-width-1-3@m uk-width-1-1">
+              <div class="uk-margin">
+                <label class="uk-form-label">輸入圖片網址</label>
+                <div class="uk-form-controls">
+                  <input class="uk-input" type="text" v-model="interim.product.imageUrl">
+                </div>
+              </div>
+              <div class="uk-margin">
+                <img :src="interim.product.imageUrl" alt="產品圖片">
+              </div>
+            </div>
+            <div class="uk-width-2-3@m uk-width-1-1">
+              <div class="uk-grid-small" uk-grid>
+                <div class="uk-width-1-2">
+                  <label class="uk-form-label">產品編號</label>
+                  <div class="uk-form-controls">
+                    <input class="uk-input" type="text" disabled v-model="interim.product.id">
+                  </div>
+                </div>
+                <div class="uk-width-1-2">
+                  <label class="uk-form-label">產品分類<span class="uk-text-danger uk-text-meta	">*</span></label>
+                  <div class="uk-form-controls">
+                    <input class="uk-input" type="text" v-model="interim.product.category">
+                  </div>
+                </div>
+                <div class="uk-width-1-2">
+                  <label class="uk-form-label">產品名稱<span class="uk-text-danger uk-text-meta	">*</span></label>
+                  <div class="uk-form-controls">
+                    <input class="uk-input" type="text" v-model="interim.product.title">
+                  </div>
+                </div>
+                <div class="uk-width-1-2">
+                  <label class="uk-form-label">單位<span class="uk-text-danger uk-text-meta	">*</span></label>
+                  <div class="uk-form-controls">
+                    <input class="uk-input" type="text" v-model="interim.product.unit">
+                  </div>
+                </div>
+                <div class="uk-width-1-2">
+                  <label class="uk-form-label">原價<span class="uk-text-danger uk-text-meta	">*</span></label>
+                  <div class="uk-form-controls">
+                    <input class="uk-input" type="number" min="0" v-model="interim.product.origin_price">
+                  </div>
+                </div>
+                <div class="uk-width-1-2">
+                  <label class="uk-form-label">售價<span class="uk-text-danger uk-text-meta	">*</span></label>
+                  <div class="uk-form-controls">
+                    <input class="uk-input" type="number" min="0" v-model="interim.product.price">
+                  </div>
+                </div>
+                <div class="uk-width-1-1">
+                  <label class="uk-form-label">產品敘述</label>
+                  <div class="uk-form-controls">
+                    <textarea class="uk-textarea" rows="5" v-model="interim.product.description"></textarea>
+                  </div>
+                </div>
+                <div class="uk-width-1-1">
+                  <label class="uk-form-label">產品說明</label>
+                  <div class="uk-form-controls">
+                    <textarea class="uk-textarea" rows="5" v-model="interim.product.content"></textarea>
+                  </div>
+                </div>
+                <div class="uk-width-1-1">
+                  <label><input class="uk-checkbox" type="checkbox" v-model="interim.product.is_enabled"> 是否上架</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="uk-modal-footer uk-text-right">
+          <button class="uk-button uk-button-default uk-modal-close" type="button">取消</button>
+          <button class="uk-button uk-button-primary" type="button" @click="checkForm">確認</button>
+        </div>
+      </div>
+    </div>
+    <!-- modal 刪除警示-->
+    <div id="modal-deleteProduct" uk-modal>
+      <div class="uk-modal-dialog uk-modal-body uk-text-center">
+          <h2 class="uk-modal-title">是否確定刪除此產品？</h2>
+          <p>商品刪除後將無法回覆</p>
+          <p>
+            <button class="uk-button uk-button-default uk-modal-close" type="button">取消</button>
+            <button class="uk-button uk-button-primary uk-modal-close" type="button" @click="deleteProduct">確認</button>
+          </p>
+      </div>
+    </div>
+    <!-- modal 評價-->
+    <div id="modal-addComment" uk-modal>
+      <div class="uk-modal-dialog uk-modal-body">
+        <h2 class="uk-modal-title">新增評價</h2>
+        <div class="uk-margin">
+          <label class="uk-form-label">綽號<span class="uk-text-danger uk-text-meta	">*</span></label>
+          <div class="uk-form-controls">
+            <input class="uk-input" type="text" v-model="interim.addComment.name">
+          </div>
+        </div>
+        <div class="uk-margin">
+          <label class="uk-form-label">評價分數<span class="uk-text-danger uk-text-meta	">*</span></label>
+          <div class="uk-form-controls">
+            <input class="uk-input" type="number" min="0" max="5" v-model="interim.addComment.stars">
+          </div>
+        </div>
+        <div class="uk-margin">
+          <label class="uk-form-label">評價內容<span class="uk-text-danger uk-text-meta	">*</span></label>
+          <div class="uk-form-controls">
+            <textarea class="uk-textarea" rows="5" v-model="interim.addComment.comment"></textarea>
+          </div>
+        </div>
+        <p class="uk-text-right">
+          <button class="uk-button uk-button-default uk-modal-close" type="button">取消</button>
+          <button class="uk-button uk-button-primary" type="button" @click="updataComment">確認</button>
+        </p>
+      </div>
+    </div>
+  </div>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/uikit/3.5.4/js/uikit.min.js'></script>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/uikit/3.5.4/js/uikit-icons.min.js'></script>
+  <script src='https://cdn.jsdelivr.net/npm/vue/dist/vue.js'></script>
+  <script src="index.js"></script>
+</body>
+</html>
